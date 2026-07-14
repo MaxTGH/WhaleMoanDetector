@@ -3,6 +3,8 @@ Created on August 15th 2025
 
 @author: Shane Andres
 
+Updated by Max Niu
+
 Contains function to create new examples from detections annotated in WMV
 
 """
@@ -15,6 +17,7 @@ from PIL import Image
 from tqdm import tqdm
 from datetime import datetime
 from spectrogram_functions import *
+from format_time import add_milliseconds
 
 def make_new_examples(detections_file_path, examples_file_path="new_examples.txt"):
     '''
@@ -30,7 +33,11 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
     - examples_file_path: the file where new examples are saved to (in the model input format)
 
     This script was updated so that multiple txts can be appended together (even with overlapping times) and the script can match the deployment ID from the detection to the wav
+    It was also updated to include and process the milliseconds of the start and end times
     '''
+
+    # Add milliseconds to start_time and end_time based on end_time_sec and start_time_sec in the detection file before loading it
+    add_milliseconds(detections_file_path)
 
     printout = "=============== MAKING NEW EXAMPLES ==============="
     print("=" * len(printout))
@@ -73,21 +80,9 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
     new_df = pd.DataFrame(columns=['spectrogram_path', 'label', 'xmin', 'xmax', 'ymin', 'ymax'])
 
     # loop through each audio file
-    #for root, _, files in os.walk(wav_folder):
-        #wav_files = [f for f in files if f.lower().endswith((".wav", ".x.wav"))] # filters out all non-wav files
-        #for wav_file in tqdm(wav_files):
-    
     for root, _, files in os.walk(wav_folder):
-        wav_files = [f for f in files if f.lower().endswith((".wav", ".x.wav"))]
-
-        # Process HAT02A files first
-        wav_files = sorted(
-            wav_files,
-            key=lambda f: (not f.startswith("HAT02A"), f)
-        )
-
+        wav_files = [f for f in files if f.lower().endswith((".wav", ".x.wav"))] # filters out all non-wav files
         for wav_file in tqdm(wav_files):
-       
             # chunk audio and create spectrograms for each chunk
             wav_file_path = os.path.join(root, wav_file)
             wav_deployment = get_deployment_id(wav_file) # get deployment id
