@@ -38,10 +38,10 @@ num_classes = len(categories) + 1 # Five classes plus background
 
 # !!! user input !!!
 
-model_name = "your_model_name"
+model_name = "Atlantic_model1_MN"
 model_constructor = RCNN_ResNet_50
-train_set_file = "train_annotations.txt"
-val_set_file = "val_annotations.txt"
+train_set_file = "train_filtered.txt"
+val_set_file = "validation.txt"
 
 lr = 0.001
 momentum = 0.9
@@ -74,6 +74,8 @@ optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight
 
 model_log_folder = f'{model_folder}/{model_name}'
 validation_log_folder = f'{evaluation_folder}/{model_name}'
+
+# change this
 if(os.path.isdir(model_log_folder)):
     raise OSError(f'Model {model_name} already exists')
 os.makedirs(model_log_folder)

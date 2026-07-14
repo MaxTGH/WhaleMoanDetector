@@ -2,33 +2,38 @@
 # by Michaela Alksne and Shane Andres
 
 
-categories: {'D': 1, '40Hz': 2, '20Hz': 3, 'A': 4, 'B': 5}   # User-defined call type labels and mappings
+# categories: {'NARW_up-call':1, 'Bm_A_North_Atlantic':2, 'Bm_arch':3,'Ba_pulse-call':4, 'Bp_20Hz':5, 'Bp_40Hz':6, 'Bb_down-sweep':7}   # User-defined call type labels and mappings
+categories: {'Bm_A_North_Atlantic':1,'Ba_pulse-call':2, 'Bp_20Hz':3, 'Bp_40Hz':4, 'Bb_down-sweep':5}
+
+# configuration of whalemoanviz
+remora:
+  pyenv_folder: 'C:/Users/HARP/.conda/envs/whalemoandetector'
 
 # configuration of spectrograms (train or inference)
 spectrogram:
   window_size: 60
   overlap_size: 0
   min_freq: 10
-  max_freq: 150
+  max_freq: 300
   sec_per_bin: 0.1
   Hz_per_bin: 1
-  CalCOFI_flag: True
+  CalCOFI_flag: False # If using calcofi data
 
 #configuration for training 
 train: 
-  model_folder: 'C:/path/to/your/models'                     # Where your in-progress models are stored
-  labeled_data_folder: 'C:/path/to/annotations'              # Where model input detections are pulled from
-  evaluation_folder: 'C:/path/to/eval'                       # Where performance metrics are saved
+  model_folder: 'F:/Model_1/epochs'                     # Where your in-progress models are stored
+  labeled_data_folder: 'F:/Model_1/Annotations/Splits_80_10_10'              # Where model input detections are pulled from
+  evaluation_folder: 'F:/Model_1/eval'                       # Where performance metrics are saved
 
 #configuration for inference
 inference:
-  wav_folder: 'C:/path/to/your/wav'                  # Where your .wav files are stored
-  model_name: 'WhaleMoanDetector.pth'                          # name of your pretrained model
-  model_path: 'C:/path/to/your/models'        # path to your pretrained model
+  wav_folder: 'F:/Model_1/Xwavs'                  # Where your .wav files are stored
+  #model_name: 'Atlantic_test_MN_epoch_26.pth'                          # name of your pretrained model with epoch_#.pth
+  #model_path: 'D:/MN_model_training/epochs/Atlantic_test_MN'        # path to your chosen pretrained model (within the subfolder that is created)
   model_constructor: 'RCNN_WMD_BEST'                                           # model architecture 
-  detections_folder: 'C:/path/to/your/detections'               # Where to save detection results
-  spectrogram_folder: 'C:/path/to/your/spectrograms' # Where to save spectrogram images
-  thresholds:  {'A': 0,'B': 0,'D': 0,'20Hz': 0,'40Hz': 0}    # Score thresholds for each category
+  detections_folder: 'F:/Model_1/detections'               # Where to save detection results
+  spectrogram_folder: 'F:/Model_1/spectrograms' # Where to save spectrogram images
+  thresholds:  {'NARW_up-call': 0,'Bm_A_North_Atlantic': 0,'Bm_arch': 0,'Ba_pulse-call': 0,'Bp_20Hz': 0, 'Bp_40Hz': 0, 'Bb_down-sweep': 0}    # Score thresholds for each category
   nms_threshold: 0.05                                        # NMS threshold for predicted bounding boxes
 
 

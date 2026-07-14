@@ -26,8 +26,10 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
        as well as rows for each negative example
 
     Inputs:
-    - detections_file_path: the file in the model output format containing detections
+    - detections_file_path: the file in the model output format containing detections 
     - examples_file_path: the file where new examples are saved to (in the model input format)
+
+    This script was updated so that multiple txts can be appended together (even with overlapping times) and the script can match the deployment ID from the detection to the wav
     '''
 
     printout = "=============== MAKING NEW EXAMPLES ==============="
@@ -39,26 +41,56 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
         config = yaml.safe_load(file)
     wav_folder = config['inference']['wav_folder']
     spectrogram_folder = config['inference']['spectrogram_folder']
+    deployment_list = ["AZORES_B_01", "HAT02A", "HAT_A_06", "NFC_A_02"] #
+    hardnegs = False #
 
     # load detections
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     df = pd.read_csv(detections_file_path, sep='\t')
-    #format_string = "%Y-%m-%d %H:%M:%S"
-    format_string = "%m/%d/%Y %H:%M:%S"
+
+    format_string = "%Y-%m-%d %H:%M:%S.%f" # so that the fractions of decimals are not cut off
+    #format_string = "%m/%d/%Y %H:%M:%S.%f" 
+
+    def get_deployment_id(name):
+        name = os.path.basename(str(name)).upper()
+
+        for deployment in deployment_list:
+            if name.startswith(deployment):
+                return deployment
+
+        return None
+
+    df["deployment_id"] = df["source_txt_file"].apply(get_deployment_id) # create a column for deployment ID in each .txt file
+    det_deployments = np.array(df["deployment_id"]) 
+    
     det_start_times = np.array([datetime.strptime(det_start_time, format_string) for det_start_time in df['start_time']])
     det_end_times = np.array([datetime.strptime(det_end_time, format_string) for det_end_time in df['end_time']])
+
+    
     det_pr = np.array([pr for pr in df['pr']])
 
     # create dataframe for new examples
     new_df = pd.DataFrame(columns=['spectrogram_path', 'label', 'xmin', 'xmax', 'ymin', 'ymax'])
 
     # loop through each audio file
+    #for root, _, files in os.walk(wav_folder):
+        #wav_files = [f for f in files if f.lower().endswith((".wav", ".x.wav"))] # filters out all non-wav files
+        #for wav_file in tqdm(wav_files):
+    
     for root, _, files in os.walk(wav_folder):
-        wav_files = [f for f in files if f.lower().endswith((".wav", ".x.wav"))] # filters out all non-wav files
+        wav_files = [f for f in files if f.lower().endswith((".wav", ".x.wav"))]
+
+        # Process HAT02A files first
+        wav_files = sorted(
+            wav_files,
+            key=lambda f: (not f.startswith("HAT02A"), f)
+        )
+
         for wav_file in tqdm(wav_files):
-                
+       
             # chunk audio and create spectrograms for each chunk
             wav_file_path = os.path.join(root, wav_file)
+            wav_deployment = get_deployment_id(wav_file) # get deployment id
             wav_file_name = os.path.splitext(wav_file)[0]
             wav_file_name = os.path.splitext(wav_file_name)[0] # remove .x for xwav files
             tqdm.write(wav_file)
@@ -76,11 +108,16 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
                 # find all detections beginning and/or ending in the current chunk that are TP/TN
                 det_mask = (chunk_start_time < det_start_times) * (det_start_times < chunk_end_time) + (chunk_start_time < det_end_times) * (det_end_times < chunk_end_time)
                 det_mask = det_mask * ( (det_pr == 1) + (det_pr == 3) )
+
+                det_mask = det_mask * (det_deployments == wav_deployment) # Only keep detections from the same deployment
+
                 det_indices = np.argwhere(det_mask).flatten()
         
                 # if no detections in current chunk, add blank row to indicate hard negative
+                
                 if len(det_indices) == 0:
-                    new_df.loc[len(new_df)] = {'spectrogram_path': spectrogram_path}
+                    if hardnegs:
+                        new_df.loc[len(new_df)] = {'spectrogram_path': spectrogram_path}
                     continue
         
                 # for each detection in the current chunk, add a row to the new examples

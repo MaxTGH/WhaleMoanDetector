@@ -25,7 +25,6 @@ import torch.optim as optim
 class AudioDetectionData(Dataset):
     
     def __init__(self, csv_file):
-        
         ext = os.path.splitext(csv_file)[1]
         if ext == '.csv':
             self.data = pd.read_csv(csv_file)
@@ -33,7 +32,10 @@ class AudioDetectionData(Dataset):
             self.data = pd.read_csv(csv_file, sep='\t')
         else:
             raise OSError("Error: unknown dataset file type")
-        self.label_mapping = {'D': 1, '40Hz': 2, '20Hz': 3, 'A NE Pacific': 4, 'B NE Pacific': 5}
+
+ 
+        self.label_mapping = {'Bm_A_North_Atlantic':1,'Ba_pulse-call':2, 'Bp_20Hz':3, 'Bp_40Hz':4, 'Bb_down-sweep':5}
+
         
         # Group data by 'ImageName' and aggregate all boxes and labels for each image
         self.grouped_data = self.data.groupby('spectrogram_path')
@@ -78,7 +80,8 @@ class AudioDetectionData_with_hard_negatives(Dataset):
             self.data = pd.read_csv(csv_file, sep='\t')
         else:
             raise OSError("Error: unknown dataset file type")
-        self.label_mapping = {'D': 1, '40Hz': 2, '20Hz': 3, 'A': 4, 'B': 5}
+        self.label_mapping = {'Bm_A_North_Atlantic':1,'Ba_pulse-call':2, 'Bp_20Hz':3, 'Bp_40Hz':4, 'Bb_down-sweep':5}
+
         
         # Group data by 'spectrogram_path' and aggregate all boxes and labels for each image
         self.grouped_data = self.data.groupby('spectrogram_path')
