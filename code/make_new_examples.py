@@ -48,8 +48,8 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
         config = yaml.safe_load(file)
     wav_folder = config['inference']['wav_folder']
     spectrogram_folder = config['inference']['spectrogram_folder']
-    deployment_list = ["AZORES_B_01", "HAT02A", "HAT_A_06", "NFC_A_02"] #
-    hardnegs = False #
+    deployment_list = config["new_examples"]["deployments"]
+    hardnegs = config["new_examples"]["hardNeg"]
 
     # load detections
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

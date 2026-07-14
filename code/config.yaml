@@ -19,6 +19,12 @@ spectrogram:
   Hz_per_bin: 1
   CalCOFI_flag: False # If using calcofi data
 
+#configuration for make_new_examples
+new_examples:
+  deployments: ["AZORES_B_01", "HAT02A", "HAT_A_06", "NFC_A_02"] # Any string that matches the detection file (source_txt_file column) and x.wav
+  hardNeg: False # False to not create hard negative examples and true to create them
+  # controlling the presence of hardnegatives can significantly decrease training time
+
 #configuration for training 
 train: 
   model_folder: 'F:/Model_1/epochs'                     # Where your in-progress models are stored
