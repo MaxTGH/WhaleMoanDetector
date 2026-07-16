@@ -20,10 +20,10 @@ from model_functions import *
 
 # !!! user input !!!
 
-model_name = "Atlantic_test_MN"
+model_name = "Atlantic_model1_MN"
 model_constructor = RCNN_ResNet_50
-val_set_file = "NFC01A_A_02_combined_test_data.txt"
-eval_epoch = 26
+val_set_file = "test_filtered.txt"
+eval_epoch = 28
 iou_threshold = 0.1
 
 

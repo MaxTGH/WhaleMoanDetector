@@ -33,9 +33,10 @@ train:
 
 #configuration for inference
 inference:
-  wav_folder: 'F:/Model_1/Xwavs'                  # Where your .wav files are stored
-  #model_name: 'Atlantic_test_MN_epoch_26.pth'                          # name of your pretrained model with epoch_#.pth
-  #model_path: 'D:/MN_model_training/epochs/Atlantic_test_MN'        # path to your chosen pretrained model (within the subfolder that is created)
+  #wav_folder: 'F:/Model_1/Xwavs'                # Where your .wav files are stored
+  wav_folder: 'F:/Model_1/InferenceXwavs/NFC_A_04'
+  model_name: 'Atlantic_model1_MN_epoch_28.pth'                          # name of your pretrained model with epoch_#.pth
+  model_path: 'F:/Model_1/epochs/Atlantic_model1_MN'        # path to your chosen pretrained model (within the subfolder that is created)
   model_constructor: 'RCNN_WMD_BEST'                                           # model architecture 
   detections_folder: 'F:/Model_1/detections'               # Where to save detection results
   spectrogram_folder: 'F:/Model_1/spectrograms' # Where to save spectrogram images

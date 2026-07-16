@@ -13,6 +13,19 @@ import yaml
 from datetime import timedelta
 from AudioStreamDescriptor import WAVhdr, XWAVhdr
 
+with open("config.yaml", "r") as file:
+    CONFIG = yaml.safe_load(file)
+
+SPEC = CONFIG["spectrogram"]
+
+WINDOW_SIZE   = SPEC["window_size"]
+OVERLAP_SIZE  = SPEC["overlap_size"]
+MIN_FREQ      = SPEC["min_freq"]
+MAX_FREQ      = SPEC["max_freq"]
+HZ_PER_BIN    = SPEC["Hz_per_bin"]
+SEC_PER_BIN   = SPEC["sec_per_bin"]
+CALCOFI_FLAG  = SPEC["CalCOFI_flag"]
+
 
 def chunk_audio(audio_file_path, device):
     '''
@@ -33,10 +46,9 @@ def chunk_audio(audio_file_path, device):
     elif not audio_file_path.endswith('.wav'):
         raise OSError('Error: unsupported audio file type')
 
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-    window_size = config['spectrogram']['window_size']
-    overlap_size = config['spectrogram']['overlap_size']
+
+    window_size = WINDOW_SIZE
+    overlap_size = OVERLAP_SIZE
     
     # load waveform
     waveform, sr = torchaudio.load(audio_file_path)
@@ -66,10 +78,9 @@ def chunk_audio(audio_file_path, device):
 
 def chunk_audio_xwav(audio_file_path, device):
 
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-    window_size = config['spectrogram']['window_size']
-    overlap_size = config['spectrogram']['overlap_size']
+
+    window_size = WINDOW_SIZE
+    overlap_size = OVERLAP_SIZE
 
     # load waveform
     waveform, _ = torchaudio.load(audio_file_path)
@@ -142,13 +153,12 @@ def chunk_to_spectrogram(chunks, sr, device):
     Outputs:
     - spectrograms: a list of spectrograms, each stored as a tensor of type uint8 with range normalized to [0, 255]
     '''
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-    CalCOFI_flag = config['spectrogram']['CalCOFI_flag']
-    min_freq = config['spectrogram']['min_freq']
-    max_freq = config['spectrogram']['max_freq']
-    sec_per_bin = config['spectrogram']['sec_per_bin']
-    Hz_per_bin = config['spectrogram']['Hz_per_bin']
+
+    CalCOFI_flag = CALCOFI_FLAG
+    min_freq = MIN_FREQ
+    max_freq = MAX_FREQ
+    sec_per_bin = SEC_PER_BIN
+    Hz_per_bin = HZ_PER_BIN
     
     spectrograms = []
     
@@ -186,9 +196,8 @@ def remove_AIS(spectrogram):
     '''
     Function to mask out AIS nagivational signals in spectrograms. Detected signals are covered with gray overlays.
     '''
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-    Hz_per_bin = config['spectrogram']['Hz_per_bin']
+
+    Hz_per_bin = HZ_PER_BIN
     thresholds = [2000, 1800, 1600]  # Threshold values for detecting AIS signal in the first, second, and third 10 Hz blocks 
     thresholds = [int(threshold / Hz_per_bin) for threshold in thresholds] # scaling thresholds based on frequency resolution
     gray_value = 128  # Gray value to replace the AIS signal
@@ -209,11 +218,9 @@ def freq_to_pixel(freq):
     """
 
     # load spectrogram parameters
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-    min_freq = config['spectrogram']['min_freq']
-    max_freq = config['spectrogram']['max_freq']
-    Hz_per_bin = config['spectrogram']['Hz_per_bin']
+    min_freq = MIN_FREQ
+    max_freq = MAX_FREQ
+    Hz_per_bin = HZ_PER_BIN
     freq_range = max_freq - min_freq + 1
     num_freq_bins = int(freq_range / Hz_per_bin)
 
@@ -232,11 +239,10 @@ def pixel_to_freq(y):
     """
 
     # load spectrogram parameters
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-    min_freq = config['spectrogram']['min_freq']
-    max_freq = config['spectrogram']['max_freq']
-    Hz_per_bin = config['spectrogram']['Hz_per_bin']
+
+    min_freq = MIN_FREQ
+    max_freq = MAX_FREQ
+    Hz_per_bin = HZ_PER_BIN
 
     # calculate frequency, pixel position is calculated from the bottom (low frequencies) because of the inversion
     freq = round(max_freq - y * Hz_per_bin)
@@ -254,10 +260,8 @@ def time_to_pixel(time):
     """
 
     # load spectrogram parameters
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-    sec_per_bin = config['spectrogram']['sec_per_bin']
-    window_size = config['spectrogram']['window_size']
+    sec_per_bin = SEC_PER_BIN
+    window_size = WINDOW_SIZE
     num_time_bins = int(window_size / sec_per_bin)
 
     # calculate pixel position
@@ -277,10 +281,8 @@ def pixel_to_time(x):
     """
 
     # load spectrogram parameters
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-    sec_per_bin = config['spectrogram']['sec_per_bin']
-    window_size = config['spectrogram']['window_size']
+    sec_per_bin = SEC_PER_BIN
+    window_size = WINDOW_SIZE
 
     # calculate pixel position
     time = x * sec_per_bin

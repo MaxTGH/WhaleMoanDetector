@@ -60,22 +60,22 @@ printout = "=============== RUNNING INFERENCE ==============="
 print("=" * len(printout))
 print(printout)
 print("=" * len(printout) + "\n")
+with open(detections_path, mode='a', encoding='utf-8') as detections:
+    for root, _, files in os.walk(wav_folder):
+        wav_files = [f for f in files if f.lower().endswith((".wav", ".x.wav"))] # filters out all non-wav files
+        for wav_file in tqdm(wav_files):
 
-for root, _, files in os.walk(wav_folder):
-    wav_files = [f for f in files if f.lower().endswith((".wav", ".x.wav"))] # filters out all non-wav files
-    for wav_file in tqdm(wav_files):
+            # run inference on spectrograms and save any that contain detections
+            wav_file_path = os.path.join(root, wav_file)
+            wav_file_name = os.path.splitext(wav_file)[0]
+            wav_file_name = os.path.splitext(wav_file_name)[0] # remove .x for xwav files     
+            tqdm.write(wav_file)
+            output = predict_and_save_spectrograms(wav_file_path, model, model_name, device)     
 
-        # run inference on spectrograms and save any that contain detections
-        wav_file_path = os.path.join(root, wav_file)
-        wav_file_name = os.path.splitext(wav_file)[0]
-        wav_file_name = os.path.splitext(wav_file_name)[0] # remove .x for xwav files     
-        tqdm.write(wav_file)
-        output = predict_and_save_spectrograms(wav_file_path, model, model_name, device)     
-
-        # write detections to TXT file
-        for detection in output:
-            # write each detection as a line in the txt file, tab-separated
-            with open(detections_path, mode='a', encoding='utf-8') as detections:
+            # write detections to TXT file
+            for detection in output:
+                # write each detection as a line in the txt file, tab-separated
+                #with open(detections_path, mode='a', encoding='utf-8') as detections:
                 detections.write('\t'.join(str(detection[field]) for field in fieldnames) + '\n')
 
 call_context_filter(detections_path)

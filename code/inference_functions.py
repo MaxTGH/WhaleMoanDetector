@@ -13,6 +13,8 @@ import torchvision.ops as ops
 from PIL import Image
 from spectrogram_functions import *
 
+saveSpect = False # do you want to save each spectrogram
+
 def predict_and_save_spectrograms(wav_file_path, model, model_name, device):
     '''
     For one wav file,
@@ -42,11 +44,19 @@ def predict_and_save_spectrograms(wav_file_path, model, model_name, device):
     wav_file_name = os.path.splitext( wav_file_path )[0] # removes .x for xwav files
     chunks, chunk_start_times, chunk_end_times, sr = chunk_audio(wav_file_path, device)  
     spectrograms = chunk_to_spectrogram(chunks, sr, device)
+
+    #Moves the entire batch to the GPU instead of one spectrogram at a time
+    #added below
+    #batch = [(spectrogram.unsqueeze(0).float() / 255).to(device) for spectrogram in spectrograms]
+
+    #with torch.no_grad():
+        #predictions = model(batch) # prediction can contain many detections
     
     t0 = chunk_start_times[0] 
 
     output = []
-    for spectrogram, chunk_start_time in list(zip(spectrograms, chunk_start_times)):
+    for spectrogram, chunk_start_time in zip(spectrograms, chunk_start_times):
+    #for spectrogram, chunk_start_time, prediction in zip(spectrograms, chunk_start_times, predictions):
         
         # run inference
         spectrogram_model = spectrogram.unsqueeze(0).unsqueeze(0).to(torch.float) / 255 # set shape to [N, C, H, W] and set range to to [0, 1]
@@ -77,7 +87,8 @@ def predict_and_save_spectrograms(wav_file_path, model, model_name, device):
                 spectrogram_file = os.path.basename(name_spectrogram_file(wav_file_name, chunk_start_time))
                 spectrogram_path = os.path.join(spectrogram_folder, spectrogram_file)
                 spectrogram_img = Image.fromarray(spectrogram.numpy())
-                spectrogram_img.save(spectrogram_path)
+                if saveSpect:
+                    spectrogram_img.save(spectrogram_path)
                 saved = True
                 
             # get box time offsets
