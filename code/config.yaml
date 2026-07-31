@@ -21,27 +21,54 @@ spectrogram:
 
 #configuration for make_new_examples
 new_examples:
-  deployments: ["AZORES_B_01", "HAT02A", "HAT_A_06", "NFC_A_02"] # Any string that matches the detection file (source_txt_file column) and x.wav
+  deployments: ["AZORES_B_01", "HAT02A", "HAT_A_06", "NFC_A_02", "NFC_A_03", "NFC_A_04"] # Any string that matches the detection file (source_txt_file column) and x.wav
   hardNeg: False # False to not create hard negative examples and true to create them
   # controlling the presence of hardnegatives can significantly decrease training time
+  wav_folder: 'F:/Model_2/Xwavs' 
+  spectrogram_folder: 'F:/Model_2/spectrograms'
 
-#configuration for training 
+#configuration for training (makes folders for you)
 train: 
-  model_folder: 'F:/Model_1/epochs'                     # Where your in-progress models are stored
-  labeled_data_folder: 'F:/Model_1/Annotations/Splits_80_10_10'              # Where model input detections are pulled from
-  evaluation_folder: 'F:/Model_1/eval'                       # Where performance metrics are saved
+  model_folder: 'F:/Model_2/epochs'                     # Where your in-progress models are stored
+  labeled_data_folder: 'F:/Model_2/Annotations/Splits_80_10_10'              # Where model input detections are pulled from
+  evaluation_folder: 'F:/Model_2/eval'                       # Where performance metrics are saved
+  model_constructor: RCNN_ResNet_50
+  model_name: 'Atlantic_model2_MN_noDSorCW'         # Generic model name
+  train_set_file: 'train_filtered.txt'
+  val_set_file: 'validation_filtered.txt'
 
 #configuration for inference
 inference:
-  #wav_folder: 'F:/Model_1/Xwavs'                # Where your .wav files are stored
-  wav_folder: 'F:/Model_1/InferenceXwavs/NFC_A_04'
-  model_name: 'Atlantic_model1_MN_epoch_28.pth'                          # name of your pretrained model with epoch_#.pth
-  model_path: 'F:/Model_1/epochs/Atlantic_model1_MN'        # path to your chosen pretrained model (within the subfolder that is created)
+  #wav_folder: 'F:/Model_2/Xwavs'                # .wav files for inference
+  wav_folder: 'F:/Model_2/infXwavs'
+  model: 'Atlantic_model2_MN_epoch_22.pth'                          # specific name of your desired pretrained model with epoch_#.pth
+  model_path: 'F:/Model_2/epochs/Atlantic_model2_MN'        # path to your chosen pretrained model (within the subfolder that is created)
   model_constructor: 'RCNN_WMD_BEST'                                           # model architecture 
-  detections_folder: 'F:/Model_1/detections'               # Where to save detection results
-  spectrogram_folder: 'F:/Model_1/spectrograms' # Where to save spectrogram images
-  thresholds:  {'NARW_up-call': 0,'Bm_A_North_Atlantic': 0,'Bm_arch': 0,'Ba_pulse-call': 0,'Bp_20Hz': 0, 'Bp_40Hz': 0, 'Bb_down-sweep': 0}    # Score thresholds for each category
+  detections_folder: 'F:/Model_2/detections'               # Where to save detection results
+  spectrogram_folder: 'F:/Model_2/spectrograms' # Where to save spectrogram images
+  thresholds:  {'Bm_A_North_Atlantic': 0.15,'Ba_pulse-call': 0.15, 'Bp_20Hz': 0.15, 'Bp_40Hz': 0.15, 'Bb_down-sweep': 0.15}    # Score thresholds for each category
   nms_threshold: 0.05                                        # NMS threshold for predicted bounding boxes
+  save_spect: False
+
+test:
+  model: 'Atlantic_model2_MN_noDSorCW_epoch_.pth'     # specific name of your desired pretrained model with epoch_#.pth
+  model_name: 'Atlantic_model2_MN_noDSorCW' 
+  model_constructor: 'RCNN_ResNet_50'
+  test_set_file: 'test_filtered.txt'
+  iou_threshold: 0.1
+
+# YOLO
+
+#configuration for training
+train_yolo: 
+  model_name: 'YOLO11l_train7'
+
+#configuration for inference
+inference_yolo:
+  model_path: 'F:/Tools/WhaleMoanDetectorGit/code/yolo/runs/detect/train-7/weights/best.pt'
+  wav_folder: 'F:/Model_2/infXwavs'
+  detections_folder: 'F:/Model_2/detections'
+
 
 
 

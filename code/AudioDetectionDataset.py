@@ -20,7 +20,11 @@ from torchvision.models.detection.rpn import AnchorGenerator
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import torch.optim as optim
+import yaml
 
+with open('config.yaml', 'r') as file:
+    config = yaml.safe_load(file)
+categories = config['categories']
 
 class AudioDetectionData(Dataset):
     
@@ -34,7 +38,7 @@ class AudioDetectionData(Dataset):
             raise OSError("Error: unknown dataset file type")
 
  
-        self.label_mapping = {'Bm_A_North_Atlantic':1,'Ba_pulse-call':2, 'Bp_20Hz':3, 'Bp_40Hz':4, 'Bb_down-sweep':5}
+        self.label_mapping = categories
 
         
         # Group data by 'ImageName' and aggregate all boxes and labels for each image
@@ -80,7 +84,7 @@ class AudioDetectionData_with_hard_negatives(Dataset):
             self.data = pd.read_csv(csv_file, sep='\t')
         else:
             raise OSError("Error: unknown dataset file type")
-        self.label_mapping = {'Bm_A_North_Atlantic':1,'Ba_pulse-call':2, 'Bp_20Hz':3, 'Bp_40Hz':4, 'Bb_down-sweep':5}
+        self.label_mapping = categories
 
         
         # Group data by 'spectrogram_path' and aggregate all boxes and labels for each image

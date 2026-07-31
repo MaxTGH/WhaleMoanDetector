@@ -11,9 +11,13 @@ import torch
 import torchaudio
 import yaml
 from datetime import timedelta
+from pathlib import Path
 from AudioStreamDescriptor import WAVhdr, XWAVhdr
 
-with open("config.yaml", "r") as file:
+
+CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
+
+with open(CONFIG_PATH, "r") as file:
     CONFIG = yaml.safe_load(file)
 
 SPEC = CONFIG["spectrogram"]

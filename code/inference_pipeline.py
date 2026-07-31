@@ -25,7 +25,7 @@ detections_folder = config['inference']['detections_folder']
 CalCOFI_flag = config['spectrogram']['CalCOFI_flag']
 categories = config['categories']
 model_path = config['inference']['model_path']
-model_name = config['inference']['model_name']
+model_name = config['inference']['model']
 model_constructor_name = config['inference']['model_constructor']
 categories_rev = {v: k for k, v in categories.items()}
 num_classes = len(categories) + 1
@@ -64,7 +64,6 @@ with open(detections_path, mode='a', encoding='utf-8') as detections:
     for root, _, files in os.walk(wav_folder):
         wav_files = [f for f in files if f.lower().endswith((".wav", ".x.wav"))] # filters out all non-wav files
         for wav_file in tqdm(wav_files):
-
             # run inference on spectrograms and save any that contain detections
             wav_file_path = os.path.join(root, wav_file)
             wav_file_name = os.path.splitext(wav_file)[0]
@@ -78,4 +77,3 @@ with open(detections_path, mode='a', encoding='utf-8') as detections:
                 #with open(detections_path, mode='a', encoding='utf-8') as detections:
                 detections.write('\t'.join(str(detection[field]) for field in fieldnames) + '\n')
 
-call_context_filter(detections_path)

@@ -17,7 +17,6 @@ from PIL import Image
 from tqdm import tqdm
 from datetime import datetime
 from spectrogram_functions import *
-from format_time import add_milliseconds
 
 def make_new_examples(detections_file_path, examples_file_path="new_examples.txt"):
     '''
@@ -37,7 +36,6 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
     '''
 
     # Add milliseconds to start_time and end_time based on end_time_sec and start_time_sec in the detection file before loading it
-    add_milliseconds(detections_file_path)
 
     printout = "=============== MAKING NEW EXAMPLES ==============="
     print("=" * len(printout))
@@ -46,8 +44,8 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
 
     with open('config.yaml', 'r') as file:
         config = yaml.safe_load(file)
-    wav_folder = config['inference']['wav_folder']
-    spectrogram_folder = config['inference']['spectrogram_folder']
+    wav_folder = config['new_examples']['wav_folder']
+    spectrogram_folder = config['new_examples']['spectrogram_folder']
     deployment_list = config["new_examples"]["deployments"]
     hardnegs = config["new_examples"]["hardNeg"]
 
@@ -62,11 +60,10 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
         name = os.path.basename(str(name)).upper()
 
         for deployment in deployment_list:
-            if name.startswith(deployment):
+            if deployment.upper() in name:
                 return deployment
 
         return None
-
     df["deployment_id"] = df["source_txt_file"].apply(get_deployment_id) # create a column for deployment ID in each .txt file
     det_deployments = np.array(df["deployment_id"]) 
     
@@ -92,14 +89,6 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
             
             chunks, chunk_start_times, chunk_end_times, sr = chunk_audio(wav_file_path, device)
             for chunk, chunk_start_time, chunk_end_time in zip(chunks, chunk_start_times, chunk_end_times):  
-
-                spectrogram_file = name_spectrogram_file(wav_file_name, chunk_start_time)
-                spectrogram_path = os.path.join(spectrogram_folder, spectrogram_file)
-                if not os.path.exists(spectrogram_path):
-                    spectrogram = chunk_to_spectrogram([chunk], sr, device)[0].numpy()
-                    spectrogram = Image.fromarray(spectrogram)
-                    spectrogram.save(spectrogram_path)
-        
                 # find all detections beginning and/or ending in the current chunk that are TP/TN
                 det_mask = (chunk_start_time < det_start_times) * (det_start_times < chunk_end_time) + (chunk_start_time < det_end_times) * (det_end_times < chunk_end_time)
                 det_mask = det_mask * ( (det_pr == 1) + (det_pr == 3) )
@@ -107,12 +96,24 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
                 det_mask = det_mask * (det_deployments == wav_deployment) # Only keep detections from the same deployment
 
                 det_indices = np.argwhere(det_mask).flatten()
+
+                # if no detections and hard negatives are not wanted, skip to the next chunk (don't save spectrogram)
+                if len(det_indices) == 0 and not hardnegs:
+                    continue
+
+                spectrogram_file = name_spectrogram_file(wav_file_name, chunk_start_time)
+                spectrogram_path = os.path.join(spectrogram_folder, spectrogram_file)
+
+                # save spectrogram
+                if not os.path.exists(spectrogram_path):
+                    spectrogram = chunk_to_spectrogram([chunk], sr, device)[0].numpy()
+                    spectrogram = Image.fromarray(spectrogram)
+                    spectrogram.save(spectrogram_path)
         
                 # if no detections in current chunk, add blank row to indicate hard negative
                 
                 if len(det_indices) == 0:
-                    if hardnegs:
-                        new_df.loc[len(new_df)] = {'spectrogram_path': spectrogram_path}
+                    new_df.loc[len(new_df)] = {'spectrogram_path': spectrogram_path}
                     continue
         
                 # for each detection in the current chunk, add a row to the new examples
