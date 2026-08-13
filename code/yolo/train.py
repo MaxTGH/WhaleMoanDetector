@@ -1,3 +1,11 @@
+'''
+Author: MN
+Date: 8/13/26
+
+Description:
+    Trains a yolo model
+'''
+
 from ultralytics import YOLO
 import yaml
 from pathlib import Path
