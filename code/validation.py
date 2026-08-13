@@ -41,32 +41,53 @@ def validation(val_loader, device, model, categories, iou_threshold=0.1):
             
             # Apply Non-Maximum Suppression
             keep = torchvision.ops.nms(output["boxes"], output["scores"], nms_threshold)
+            
             out_bbox = output["boxes"][keep]
             out_scores = output["scores"][keep]
             out_labels = output["labels"][keep]
-            
+
+            order = torch.argsort(out_scores, descending=True)
+
+            out_bbox = out_bbox[order]
+            out_scores = out_scores[order]
+            out_labels = out_labels[order]
+
+
             # Loop over each score threshold
             for score_threshold in score_thresholds:
                 valid_preds = out_scores > score_threshold
                 filtered_boxes = out_bbox[valid_preds]
+                filtered_scores = out_scores[valid_preds]
                 filtered_labels = out_labels[valid_preds]
                 
                 if len(filtered_boxes) > 0 and len(boxes) > 0:
                     ious = box_iou(filtered_boxes, boxes)
+                    # Keep track of which ground truth boxes have already been matched.
+                    # Initially, no ground truth boxes have been assigned to a prediction.
+                    # This prevents multiple predictions from being counted as true positives
+                    # for the same ground truth object.
+                    matched_gt = torch.zeros(len(boxes), dtype=torch.bool, device=device)
                     
                     # Loop through predictions to find matches with ground truth
                     for i, pred_label in enumerate(filtered_labels):
                         max_iou, max_iou_idx = ious[i].max(0)
-                        gt_label = labels[max_iou_idx].item()
-                        
-                        if max_iou >= iou_threshold and labels[max_iou_idx] == pred_label:
+
+                        if (
+                            max_iou >= iou_threshold
+                            and labels[max_iou_idx] == pred_label
+                            and not matched_gt[max_iou_idx]
+                        ):
+                            # First prediction to match this ground truth
                             all_metrics[score_threshold][pred_label.item()]['tp'] += 1
+                            matched_gt[max_iou_idx] = True
+
                         else:
+                            # Wrong class, low IoU, or duplicate detection
                             all_metrics[score_threshold][pred_label.item()]['fp'] += 1
                     
                     # Check for ground truth boxes not matched by predictions
                     for j, gt_label in enumerate(labels):
-                        if ious[:, j].max(0)[0] < iou_threshold:
+                        if not matched_gt[j]:
                             all_metrics[score_threshold][gt_label.item()]['fn'] += 1
                 else:
                     # If no predictions, all ground truth boxes are false negatives

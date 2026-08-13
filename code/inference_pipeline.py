@@ -77,3 +77,4 @@ with open(detections_path, mode='a', encoding='utf-8') as detections:
                 #with open(detections_path, mode='a', encoding='utf-8') as detections:
                 detections.write('\t'.join(str(detection[field]) for field in fieldnames) + '\n')
 
+#call_context_filter(detections_path)

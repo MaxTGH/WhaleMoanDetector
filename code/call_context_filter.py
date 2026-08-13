@@ -9,8 +9,10 @@ Created on Mon Feb 10 07:59:19 2025
 import os
 import pandas as pd
 import re
+from tqdm import tqdm
 
-#txt_file_path = "N:/Michaela_working_disk_backup/WhaleMoanDetector_experiments/results/WhaleMoanDetector_12_11_24_12_best/CalCOFI_2008_08/CalCOFI_2008_08_raw_detections.txt"
+
+txt_file_path = r"F:\Model_2\detections\raw_detections_yolo.txt"
 
 def call_context_filter(txt_file_path):
     """
@@ -42,7 +44,7 @@ def call_context_filter(txt_file_path):
     df['sonobuoy_id'] = df['wav_file_path'].apply(lambda x: re.search(r"(SB\d+)", x).group(1) if re.search(r"(SB\d+)", x) else "Unknown")
 
     # Define call category grouping
-    df['category'] = df['label'].replace({'A': 'AB', 'B': 'AB', '40Hz': '20-40Hz', '20Hz': '20-40Hz'})
+    df['category'] = df['label'].replace({'Bp_20Hz': '20-40Hz', 'Bp_40Hz': '20-40Hz'})
 
     # Sort by deployment and start time
     df = df.sort_values(by=['sonobuoy_id', 'start_time'])
@@ -58,7 +60,7 @@ def call_context_filter(txt_file_path):
         valid_indices = []
 
         # Iterate through each call
-        for i, row in group.iterrows():
+        for i, row in tqdm(group.iterrows(), total=len(group), desc="Rolling filter"):
             category_mask = (group['category'] == row['category'])  # Match category
             time_mask = (group['start_time'] >= row['start_time'] - pd.Timedelta(hours=1)) & \
                         (group['start_time'] <= row['start_time'] + pd.Timedelta(hours=1))  # ±1 hour window
@@ -67,7 +69,7 @@ def call_context_filter(txt_file_path):
             windowed_calls = group[category_mask & time_mask]
         
             # Check the high-confidence calls
-            high_conf_calls = windowed_calls[windowed_calls['score'] > 0.7]
+            high_conf_calls = windowed_calls[windowed_calls['score'] > 0.4]
 
             # Rule 1: If there is at least one high-confidence call and
             # Rule 2: there are at least 3 calls in total,
@@ -125,9 +127,12 @@ def call_context_filter(txt_file_path):
 
     def filter_call_type(group, label, freq_range, duration_range, join_within_sec=None, keep_highest_within_sec=None):
         """Apply frequency, duration, and merging filters to each call type."""
-        filtered_group = group[(group['label'] == label) & 
-                               (group['min_frequency'] >= freq_range[0]) & 
-                               (group['max_frequency'] <= freq_range[1])]
+        freq_tolerance = 5
+        filtered_group = group[
+            (group['label'] == label) &
+            (group['min_frequency'] >= (freq_range[0] - freq_tolerance)) &
+            (group['max_frequency'] <= (freq_range[1] + freq_tolerance))
+]
 
         # Apply duration filter
         if duration_range:
@@ -144,13 +149,45 @@ def call_context_filter(txt_file_path):
 
         return filtered_group
 
-    # Define filter parameters
+        # Define filter parameters
     filters = {
-        'A': {'freq_range': (60, 100), 'duration_range': (5, 25), 'join_within_sec': 3, 'keep_highest_within_sec': None},
-        'B': {'freq_range': (10, 70), 'duration_range': (5, 25), 'join_within_sec': 3,'keep_highest_within_sec': None},
-        'D': {'freq_range': (20, 120), 'duration_range': (2, 10)},
-        '40Hz': {'freq_range': (35, 100), 'duration_range': (0, 4)},
-        '20Hz': {'freq_range': (9, 40), 'duration_range': None, 'join_within_sec': None, 'keep_highest_within_sec': 1},
+        # Minke whale pulse-call
+        'Ba_pulse-call': {
+            'freq_range': (130, 200),
+            'duration_range': (15, 60),
+            'join_within_sec': 3,
+            'keep_highest_within_sec': None
+        },
+
+        # Fin whale 20 Hz
+        'Bp_20Hz': {
+            'freq_range': (10, 30),
+            'duration_range': (0, 5),
+            'join_within_sec': None,
+            'keep_highest_within_sec': 1
+        },
+
+        # Fin whale 40 Hz
+        'Bp_40Hz': {
+            'freq_range': (25, 115),
+            'duration_range': (0, 5),
+            'keep_highest_within_sec': 1
+        },
+
+        # North Atlantic A call
+        'Bm_A_North_Atlantic': {
+            'freq_range': (10, 31),
+            'duration_range': (3, 25),
+            'join_within_sec': 3,
+            'keep_highest_within_sec': None
+        },
+
+        # Sei whale down-sweep
+        'Bb_down-sweep': {
+            'freq_range': (18, 130),
+            'duration_range': (0, 5),
+            'keep_highest_within_sec': 1
+        }
     }
 
     # Apply frequency, duration, and merging filters per deployment
@@ -179,3 +216,4 @@ def call_context_filter(txt_file_path):
 
 #txt_file_path = "L:/WhaleMoanDetector_predictions/CalCOFI_2009/CalCOFI_2009_11/CalCOFI_2009_11_raw_detections.txt"
 #df_filtered = call_context_filter(txt_file_path)
+

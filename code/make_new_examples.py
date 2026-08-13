@@ -52,7 +52,7 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
     # load detections
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     df = pd.read_csv(detections_file_path, sep='\t')
-
+    
     format_string = "%Y-%m-%d %H:%M:%S.%f" # so that the fractions of decimals are not cut off
     #format_string = "%m/%d/%Y %H:%M:%S.%f" 
 
@@ -66,6 +66,7 @@ def make_new_examples(detections_file_path, examples_file_path="new_examples.txt
         return None
     df["deployment_id"] = df["source_txt_file"].apply(get_deployment_id) # create a column for deployment ID in each .txt file
     det_deployments = np.array(df["deployment_id"]) 
+
     
     det_start_times = np.array([datetime.strptime(det_start_time, format_string) for det_start_time in df['start_time']])
     det_end_times = np.array([datetime.strptime(det_end_time, format_string) for det_end_time in df['end_time']])

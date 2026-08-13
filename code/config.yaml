@@ -1,13 +1,8 @@
 # Configuration file with WhaleMoanDetector settings and file paths
 # by Michaela Alksne and Shane Andres
 
-
 # categories: {'NARW_up-call':1, 'Bm_A_North_Atlantic':2, 'Bm_arch':3,'Ba_pulse-call':4, 'Bp_20Hz':5, 'Bp_40Hz':6, 'Bb_down-sweep':7}   # User-defined call type labels and mappings
 categories: {'Bm_A_North_Atlantic':1,'Ba_pulse-call':2, 'Bp_20Hz':3, 'Bp_40Hz':4, 'Bb_down-sweep':5}
-
-# configuration of whalemoanviz
-remora:
-  pyenv_folder: 'C:/Users/HARP/.conda/envs/whalemoandetector'
 
 # configuration of spectrograms (train or inference)
 spectrogram:
@@ -24,23 +19,23 @@ new_examples:
   deployments: ["AZORES_B_01", "HAT02A", "HAT_A_06", "NFC_A_02", "NFC_A_03", "NFC_A_04"] # Any string that matches the detection file (source_txt_file column) and x.wav
   hardNeg: False # False to not create hard negative examples and true to create them
   # controlling the presence of hardnegatives can significantly decrease training time
-  wav_folder: 'F:/Model_2/Xwavs' 
-  spectrogram_folder: 'F:/Model_2/spectrograms'
+  wav_folder: 'F:/Model_3/Test/Xwavs' # same xwavs for model 3 because all we did was cut Hat02 and change NFC02
+  spectrogram_folder: 'F:/Model_3/Test/spectrograms' # same spectrograms
 
 #configuration for training (makes folders for you)
 train: 
-  model_folder: 'F:/Model_2/epochs'                     # Where your in-progress models are stored
-  labeled_data_folder: 'F:/Model_2/Annotations/Splits_80_10_10'              # Where model input detections are pulled from
-  evaluation_folder: 'F:/Model_2/eval'                       # Where performance metrics are saved
+  model_folder: 'F:/Model_3/epochs'                     # Where your in-progress models are stored
+  labeled_data_folder: 'F:/Model_3/Test'              # Where model input detections are pulled from
+  evaluation_folder: 'F:/Model_3/Test/eval'                       # Where performance metrics are saved
   model_constructor: RCNN_ResNet_50
-  model_name: 'Atlantic_model2_MN_noDSorCW'         # Generic model name
+  model_name: 'Atlantic_model3_MN_CW'      # Generic model name
   train_set_file: 'train_filtered.txt'
   val_set_file: 'validation_filtered.txt'
 
 #configuration for inference
 inference:
   #wav_folder: 'F:/Model_2/Xwavs'                # .wav files for inference
-  wav_folder: 'F:/Model_2/infXwavs'
+  wav_folder: 'F:/Model_3/infXwavs'
   model: 'Atlantic_model2_MN_epoch_22.pth'                          # specific name of your desired pretrained model with epoch_#.pth
   model_path: 'F:/Model_2/epochs/Atlantic_model2_MN'        # path to your chosen pretrained model (within the subfolder that is created)
   model_constructor: 'RCNN_WMD_BEST'                                           # model architecture 
@@ -51,17 +46,17 @@ inference:
   save_spect: False
 
 test:
-  model: 'Atlantic_model2_MN_noDSorCW_epoch_.pth'     # specific name of your desired pretrained model with epoch_#.pth
-  model_name: 'Atlantic_model2_MN_noDSorCW' 
+  model: 'Atlantic_model3_MN_CW_epoch_22.pth'     # specific name of your desired pretrained model with epoch_#.pth
+  model_name: 'Atlantic_model3_MN_CW'
   model_constructor: 'RCNN_ResNet_50'
-  test_set_file: 'test_filtered.txt'
-  iou_threshold: 0.1
+  test_set_file: 'new_examples.txt'
+  iou_threshold: 0.5
 
 # YOLO
 
 #configuration for training
 train_yolo: 
-  model_name: 'YOLO11l_train7'
+  model_name: 'YOLO11l_model3_OAPatience'
 
 #configuration for inference
 inference_yolo:

@@ -13,6 +13,7 @@ NOTE: pretrained Faster R-CNN ResNet-50 models expect the input image tensor to 
 """
 
 import torch
+
 from torch.utils.data import DataLoader
 from AudioDetectionDataset import AudioDetectionData_with_hard_negatives
 from custom_collate import custom_collate
@@ -23,7 +24,10 @@ import json
 from tqdm import tqdm
 import yaml
 from datetime import datetime
+import shutil
 
+from torchvision.models.detection import roi_heads
+import torch.nn.functional as F
 
 # loading file paths
 
@@ -34,14 +38,12 @@ labeled_data_folder = config['train']['labeled_data_folder']
 evaluation_folder = config['train']['evaluation_folder']
 categories = config['categories']
 num_classes = len(categories) + 1 # Five classes plus background
+model_constructor = config['train']['model_constructor']
+model_name = config['train']['model_name']
+train_set_file = config['train']['train_set_file']
+val_set_file = config['train']['val_set_file']
 
 
-# !!! user input !!!
-
-model_name = "Atlantic_model1_MN"
-model_constructor = RCNN_ResNet_50
-train_set_file = "train_filtered.txt"
-val_set_file = "validation.txt"
 
 lr = 0.001
 momentum = 0.9
@@ -52,7 +54,7 @@ val_batch_size = 1
 
 model_log = {
     "model_name": model_name,
-    "notes": "Testing out the code",
+    "notes": "testing out pretrained detector and backbone",
     "dataset": "train_annotations",
     "train_file": train_set_file,
     "val_file": val_set_file,
@@ -69,18 +71,41 @@ model_log = {
     }
 }
 
-model = model_constructor(num_classes)
-optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+os.makedirs(model_folder, exist_ok=True)
+os.makedirs(evaluation_folder, exist_ok=True)
+
+
+MODEL_CONSTRUCTORS = {
+    "RCNN_ResNet_50": RCNN_ResNet_50,
+    "RCNN_COCO": RCNN_COCO,
+    "RCNN_WMD_BEST": RCNN_WMD_BEST,
+    "RetinaNet_COCO": RetinaNet_COCO,
+    "RetinaNet_Scratch": RetinaNet_Scratch,
+}
+
+model_constructor = MODEL_CONSTRUCTORS[model_constructor]
+
 
 model_log_folder = f'{model_folder}/{model_name}'
 validation_log_folder = f'{evaluation_folder}/{model_name}'
 
-# change this
-if(os.path.isdir(model_log_folder)):
-    raise OSError(f'Model {model_name} already exists')
+if os.path.isdir(model_log_folder):
+    response = input(
+        f"Model '{model_name}' already exists.\n"
+        f"Delete the existing model and continue? [y/N]: "
+    ).strip().lower()
+
+    if response in ("y", "yes"):
+        shutil.rmtree(model_log_folder)
+        print(f"Deleted '{model_log_folder}'.")
+    else:
+        print("Training cancelled.")
+        raise SystemExit(0)
+
 os.makedirs(model_log_folder)
 if(not os.path.isdir(validation_log_folder)):
     os.makedirs(validation_log_folder)
+
 with open(os.path.join(model_log_folder, "model_log.json"), "w") as f:
     json.dump(model_log, f, indent=4)
 
@@ -104,8 +129,57 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 if str(device) != "cuda":
     print("Using " + str(device))
 
+# calculated from effective Class weights
+class_weights = torch.tensor([
+    1.0,   # background
+    0.6371,   # Bm_A_North_Atlantic
+    0.7439,   # Ba_pulse-call
+    0.6407,   # Bp_20Hz
+    2.1823,   # Bp_40Hz
+    0.7961    # Bb_down-sweep
+], device=device)
 
+def custom_fastrcnn_loss(
+    class_logits,
+    box_regression,
+    labels,
+    regression_targets,
+):
+
+    labels = torch.cat(labels, dim=0)
+    regression_targets = torch.cat(regression_targets, dim=0)
+
+    classification_loss = F.cross_entropy(
+        class_logits,
+        labels,
+        weight=class_weights
+    )
+
+    sampled_pos_inds_subset = torch.where(labels > 0)[0]
+    labels_pos = labels[sampled_pos_inds_subset]
+
+    N, num_classes = class_logits.shape
+    box_regression = box_regression.reshape(
+        N,
+        box_regression.size(-1) // 4,
+        4,
+    )
+
+    box_loss = F.smooth_l1_loss(
+        box_regression[sampled_pos_inds_subset, labels_pos],
+        regression_targets[sampled_pos_inds_subset],
+        beta=1 / 9,
+        reduction="sum",
+    )
+
+    box_loss = box_loss / labels.numel()
+
+    return classification_loss, box_loss
+
+roi_heads.fastrcnn_loss = custom_fastrcnn_loss
 # training loop
+model = model_constructor(num_classes)
+optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
 
 model_printout = "=============== TRAINING " + model_name + " ==============="
 print("=" * len(model_printout))
@@ -113,7 +187,7 @@ print(model_printout)
 print("=" * len(model_printout) + "\n")
 num_batches = int(len(train_loader.dataset) / train_batch_size)
 model.to(device)
-model.train()
+model.train() # prepare model for training
 
 progress_bar = tqdm(range(num_epochs))
 for epoch in progress_bar:
@@ -147,9 +221,9 @@ for epoch in progress_bar:
         loss_dict = model(imgs,targets)
         loss = sum(v for v in loss_dict.values())
         epoch_train_loss += loss.cpu().detach().numpy()
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        optimizer.zero_grad() # zero gradients because they accumulate
+        loss.backward() # compute gradients 
+        optimizer.step() # change weights based off of gradients and learning rate
     
 
     # save model from current epoch

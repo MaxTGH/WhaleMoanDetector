@@ -1,0 +1,12 @@
+path: F:/Model_1/YOLO
+
+train: images/train
+val: images/validation
+test: images/test
+
+names:
+  0: Bm_A_North_Atlantic
+  1: Ba_pulse-call
+  2: Bp_20Hz
+  3: Bp_40Hz
+  4: Bb_down-sweep
