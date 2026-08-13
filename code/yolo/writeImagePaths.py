@@ -1,3 +1,13 @@
+'''
+Author: MN
+Date: 8/13/26
+
+Description:
+    Creates hard links for training, validation, and test spectrograms in the
+    YOLO dataset structure. Only images with corresponding YOLO label files
+    are linked, and missing labels are reported.
+'''
+
 import os
 import pandas as pd
 

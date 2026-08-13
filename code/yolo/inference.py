@@ -1,3 +1,14 @@
+'''
+Author: MN
+Date: 8/13/26
+
+Description:
+    Runs YOLO inference on all WAV files in the configured folder and saves
+    detections to a tab-delimited output file. Uses the trained YOLO model
+    and converts predicted bounding boxes into detection times, frequencies,
+    confidence scores, and other detection information.
+'''
+
 from ultralytics import YOLO
 import os
 import yaml

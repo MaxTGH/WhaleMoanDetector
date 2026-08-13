@@ -1,3 +1,11 @@
+'''
+Author: MN
+Date: 8/13/26
+
+Description:
+    Evaluates the trained YOLO model on the test dataset.
+'''
+
 from ultralytics import YOLO
 
 def main():

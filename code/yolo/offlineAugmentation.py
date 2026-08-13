@@ -1,3 +1,15 @@
+'''
+Author: MN
+Date: 8/13/26
+
+Description:
+    Augments Bp_40Hz-only training spectrograms to address class imbalance.
+    Creates additional examples using brightness, contrast, and Gaussian noise
+    transformations while preserving and correcting YOLO bounding boxes. The
+    original and augmented data are combined into a final training dataset.
+'''
+
+
 import os
 from pathlib import Path
 

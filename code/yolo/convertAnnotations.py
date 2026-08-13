@@ -1,3 +1,14 @@
+'''
+Author: MN
+Date: 8/13/26
+
+Description:
+    Converts training, validation, and test annotations into YOLO label format.
+    Bounding boxes are normalized to image dimensions and saved as individual
+    label files for each spectrogram, including empty files for hard negatives.
+'''
+
+
 import os
 import pandas as pd
 from PIL import Image
