@@ -1,4 +1,4 @@
-Additional model training/inference notes: https://docs.google.com/document/d/15BzuF_Rasm6-6Lyo2u4YQYJK1Yi0ziaN4SRNUrVGAQ8/edit?tab=t.0
+Updated model training/inference notes: https://docs.google.com/document/d/15BzuF_Rasm6-6Lyo2u4YQYJK1Yi0ziaN4SRNUrVGAQ8/edit?tab=t.0
 
 Written by: Max Niu
 
