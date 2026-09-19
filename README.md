@@ -4,6 +4,7 @@ Written by: Max Niu
 
 # WhaleMoanDetector: Detecting Blue and Fin Whale Calls in Audio
 *Michaela Noel Alksne and Shane Andres* 
+
 *Revised by Max Niu*
 
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
